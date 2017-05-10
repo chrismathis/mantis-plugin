@@ -1,7 +1,15 @@
 package hudson.plugins.mantis;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.kohsuke.stapler.DataBoundConstructor;
+
 import hudson.Util;
-import hudson.model.AbstractProject;
+import hudson.model.Job;
 import hudson.plugins.mantis.model.MantisCategory;
 import hudson.plugins.mantis.model.MantisIssue;
 import hudson.plugins.mantis.model.MantisNote;
@@ -11,17 +19,9 @@ import hudson.plugins.mantis.soap.MantisSession;
 import hudson.plugins.mantis.soap.MantisSessionFactory;
 import hudson.util.Secret;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-
 /**
- * Reperesents an external Mantis installation and configuration needed to access this
- * Mantis.
+ * Reperesents an external Mantis installation and configuration needed to
+ * access this Mantis.
  *
  * @author Seiji Sogabe
  */
@@ -69,7 +69,7 @@ public final class MantisSite {
      */
     private Secret secretBasicPassword;
 
-    public static MantisSite get(final AbstractProject<?, ?> p) {
+    public static MantisSite get(final Job<?, ?> p) {
         final MantisProjectProperty mpp = p.getProperty(MantisProjectProperty.class);
         if (mpp != null) {
             final MantisSite site = mpp.getSite();
@@ -111,7 +111,6 @@ public final class MantisSite {
         return secretPassword;
     }
 
-
     public String getName() {
         return url.toExternalForm();
     }
@@ -124,7 +123,7 @@ public final class MantisSite {
     public String getBasicPassword() {
         return basicPassword;
     }
-    
+
     public String getPlainBasicPassword() {
         return Secret.toString(secretBasicPassword);
     }
@@ -134,8 +133,8 @@ public final class MantisSite {
     }
 
     @DataBoundConstructor
-    public MantisSite(final URL url, final String version, final String userName,
-            final String password, final String basicUserName, final String basicPassword) {
+    public MantisSite(final URL url, final String version, final String userName, final String password,
+            final String basicUserName, final String basicPassword) {
         if (!url.toExternalForm().endsWith("/")) {
             try {
                 this.url = new URL(url.toExternalForm() + '/');
@@ -155,8 +154,8 @@ public final class MantisSite {
     public String getIssueLink(int issueNo) {
         String u = getUrl().toExternalForm();
         return String.format("%sview.php?id=%d", u, issueNo);
-    }  
-    
+    }
+
     public boolean isConnect() {
         final String urlString = url.toExternalForm();
         try {
@@ -195,7 +194,7 @@ public final class MantisSite {
         final MantisSession session = createSession();
         return session.getProjects();
     }
-    
+
     public List<MantisCategory> getCategories(int projectId) throws MantisHandlingException {
         final MantisSession session = createSession();
         return session.getCategories(projectId);
@@ -205,7 +204,7 @@ public final class MantisSite {
         final MantisSession session = createSession();
         return session.addIssue(issue);
     }
-    
+
     private MantisSession createSession() throws MantisHandlingException {
         return MantisSessionFactory.getSession(this);
     }

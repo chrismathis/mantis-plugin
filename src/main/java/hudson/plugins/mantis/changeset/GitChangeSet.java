@@ -1,7 +1,8 @@
 package hudson.plugins.mantis.changeset;
 
-import hudson.model.AbstractBuild;
 import java.util.Collection;
+
+import hudson.scm.SCM;
 
 /**
  * ChangeSet of Git.
@@ -13,9 +14,8 @@ public class GitChangeSet extends AbstractChangeSet<hudson.plugins.git.GitChange
 
     private static final long serialVersionUID = 1L;
 
-    public GitChangeSet(final int id, final AbstractBuild<?, ?> build,
-            final hudson.plugins.git.GitChangeSet entry) {
-        super(id, build, entry);
+    public GitChangeSet(final int id, final SCM scm, final hudson.plugins.git.GitChangeSet entry) {
+        super(id, scm, entry);
     }
 
     @Override

@@ -1,29 +1,30 @@
 package hudson.plugins.mantis.changeset;
 
-import hudson.model.AbstractBuild;
-import hudson.model.User;
-import hudson.scm.ChangeLogSet.Entry;
-import hudson.scm.RepositoryBrowser;
-import hudson.scm.SCM;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.logging.Logger;
 
+import hudson.model.User;
+import hudson.scm.RepositoryBrowser;
+import hudson.scm.SCM;
+import hudson.scm.ChangeLogSet.Entry;
+
 /**
  * AbstractChangeSet
+ *
  * @author Seiji Sogabe
  * @since 0.7
  */
 public abstract class AbstractChangeSet<T extends Entry> implements ChangeSet, Serializable {
 
     protected int id;
-    protected AbstractBuild<?, ?> build;
+    protected SCM scm;
     protected T entry;
 
-    public AbstractChangeSet(final int id, final AbstractBuild<?, ?> build, final T entry) {
+    public AbstractChangeSet(final int id, final SCM scm, final T entry) {
         this.id = id;
-        this.build = build;
+        this.scm = scm;
         this.entry = entry;
     }
 
@@ -36,10 +37,9 @@ public abstract class AbstractChangeSet<T extends Entry> implements ChangeSet, S
     public abstract String createChangeLog();
 
     protected RepositoryBrowser getRepositoryBrowser() {
-        if (build == null || build.getProject() == null) {
+        if (scm == null) {
             return null;
         }
-        final SCM scm = build.getProject().getScm();
         return scm.getBrowser();
     }
 
@@ -67,7 +67,7 @@ public abstract class AbstractChangeSet<T extends Entry> implements ChangeSet, S
         final User user = entry.getAuthor();
         if (user == null) {
             return UNKNOWN_AUTHOR;
-        } 
+        }
         return user.getId();
     }
 
@@ -77,6 +77,6 @@ public abstract class AbstractChangeSet<T extends Entry> implements ChangeSet, S
         }
         return entry.getMsg();
     }
-    
+
     private static final Logger LOGGER = Logger.getLogger(AbstractChangeSet.class.getName());
 }

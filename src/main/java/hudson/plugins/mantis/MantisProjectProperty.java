@@ -1,41 +1,42 @@
 package hudson.plugins.mantis;
 
-import hudson.Extension;
-import hudson.Util;
-import hudson.matrix.MatrixRun;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Descriptor.FormException;
-import hudson.model.Hudson;
-import hudson.model.Job;
-import hudson.model.JobProperty;
-import hudson.model.JobPropertyDescriptor;
-import hudson.plugins.mantis.MantisSite.MantisVersion;
-import hudson.plugins.mantis.model.MantisCategory;
-import hudson.plugins.mantis.model.MantisProject;
-import hudson.util.CopyOnWriteList;
-import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
 import javax.servlet.ServletException;
-import net.sf.json.JSONObject;
+
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import hudson.Extension;
+import hudson.Util;
+import hudson.model.AbstractProject;
+import hudson.model.Hudson;
+import hudson.model.Job;
+import hudson.model.JobProperty;
+import hudson.model.JobPropertyDescriptor;
+import hudson.model.Run;
+import hudson.plugins.mantis.MantisSite.MantisVersion;
+import hudson.plugins.mantis.model.MantisCategory;
+import hudson.plugins.mantis.model.MantisProject;
+import hudson.util.CopyOnWriteList;
+import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
+import net.sf.json.JSONObject;
+
 /**
  * Associates {@link AbstractProject} with {@link MantisSite}.
  *
  * @author Seiji Sogabe
  */
-public final class MantisProjectProperty extends JobProperty<AbstractProject<?, ?>> {
+public final class MantisProjectProperty extends JobProperty<Job<?, ?>> {
 
     @Extension
     public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
@@ -49,25 +50,21 @@ public final class MantisProjectProperty extends JobProperty<AbstractProject<?, 
     private Pattern regexpPattern;
     private final boolean linkEnabled;
 
-    public static MantisProjectProperty get(AbstractBuild<?, ?> build) {
+    public static MantisProjectProperty get(Run<?, ?> build) {
         if (build == null) {
             return null;
         }
-        Job<?, ?> job;
-        if (build instanceof MatrixRun) {
-            job = ((MatrixRun) build).getProject().getParent();
-        } else {
-            job = build.getProject();
-        }
+        Job<?, ?> job = build.getParent();
+
         return job.getProperty(MantisProjectProperty.class);
-    }        
-    
+    }
+
     @DataBoundConstructor
-    public MantisProjectProperty(String siteName, int projectId, String category,
-            String pattern, String regex, boolean linkEnabled) {
+    public MantisProjectProperty(String siteName, int projectId, String category, String pattern, String regex,
+            boolean linkEnabled) {
         String name;
         if (siteName != null) {
-             name = siteName;
+            name = siteName;
         } else {
             name = defaultSiteName();
         }
@@ -150,7 +147,7 @@ public final class MantisProjectProperty extends JobProperty<AbstractProject<?, 
         final String pt = buf.toString().replace(ISSUE_ID_STRING, ")(\\d+)(?=");
         return Pattern.compile(pt);
     }
-    
+
     public static final class DescriptorImpl extends JobPropertyDescriptor {
 
         private final CopyOnWriteList<MantisSite> sites = new CopyOnWriteList<MantisSite>();
@@ -163,7 +160,7 @@ public final class MantisProjectProperty extends JobProperty<AbstractProject<?, 
         @SuppressWarnings("unchecked")
         @Override
         public boolean isApplicable(final Class<? extends Job> jobType) {
-            return AbstractProject.class.isAssignableFrom(jobType);
+            return Job.class.isAssignableFrom(jobType);
         }
 
         @Override
@@ -174,7 +171,7 @@ public final class MantisProjectProperty extends JobProperty<AbstractProject<?, 
         public MantisSite[] getSites() {
             return sites.toArray(new MantisSite[0]);
         }
-        
+
         void addSite(MantisSite site) {
             sites.add(site);
         }
@@ -224,15 +221,15 @@ public final class MantisProjectProperty extends JobProperty<AbstractProject<?, 
 
             List<MantisProject> projects;
             try {
-               projects = site.getProjects();
+                projects = site.getProjects();
             } catch (MantisHandlingException e) {
                 return model;
             }
             for (MantisProject p : projects) {
-               model.add(p.getName(), "" + p.getId());
-               for (MantisProjectItem sub : subProjects(p, 1)) {
-                   model.add(sub.getName(), sub.getId());
-               }
+                model.add(p.getName(), "" + p.getId());
+                for (MantisProjectItem sub : subProjects(p, 1)) {
+                    model.add(sub.getName(), sub.getId());
+                }
             }
 
             return model;
@@ -251,7 +248,7 @@ public final class MantisProjectProperty extends JobProperty<AbstractProject<?, 
             public String getName() {
                 return name;
             }
-            
+
             public MantisProjectItem(String name, String id) {
                 this.name = name;
                 this.id = id;
@@ -301,19 +298,17 @@ public final class MantisProjectProperty extends JobProperty<AbstractProject<?, 
             return FormValidation.validateRequired(value);
         }
 
-        public FormValidation doCheckLogin(
-                @QueryParameter("m.url") String url, @QueryParameter("m.version") String version, 
-                @QueryParameter("m.userName") String userName, @QueryParameter("m.password") String password, 
-                @QueryParameter("m.basicUserName") String basicUserName, 
-                @QueryParameter("m.basicPassword") String basicPassword) 
-                throws IOException, ServletException {
+        public FormValidation doCheckLogin(@QueryParameter("m.url") String url,
+                @QueryParameter("m.version") String version, @QueryParameter("m.userName") String userName,
+                @QueryParameter("m.password") String password, @QueryParameter("m.basicUserName") String basicUserName,
+                @QueryParameter("m.basicPassword") String basicPassword) throws IOException, ServletException {
             // only administrator allowed
             Hudson.getInstance().checkPermission(Hudson.ADMINISTER);
 
             if (url == null) {
                 return FormValidation.error(Messages.MantisProjectProperty_MantisUrlMandatory());
             }
-            
+
             try {
                 URL urL = new URL(url);
             } catch (MalformedURLException e) {
@@ -322,18 +317,20 @@ public final class MantisProjectProperty extends JobProperty<AbstractProject<?, 
 
             MantisVersion v = MantisVersion.getVersionSafely(version, MantisVersion.V120);
 
-            final MantisSite site = new MantisSite(
-                    new URL(url), v.name(), userName, password, basicUserName, basicPassword);
+            final MantisSite site = new MantisSite(new URL(url), v.name(), userName, password, basicUserName,
+                    basicPassword);
             if (!site.isConnect()) {
                 return FormValidation.error(Messages.MantisProjectProperty_UnableToLogin());
             }
 
             return FormValidation.ok(Messages.MantisProjectProperty_Verified());
         }
-        
-        public FormValidation doCheckPattern(@AncestorInPath final AbstractProject<?, ?> project,
+
+        public FormValidation doCheckPattern(@AncestorInPath final Job<?, ?> project,
                 @QueryParameter final String value) throws IOException, ServletException {
+
             project.checkPermission(Job.CONFIGURE);
+
             final String p = Util.fixEmptyAndTrim(value);
             if (p != null && p.indexOf(ISSUE_ID_STRING) == -1) {
                 return FormValidation.error(Messages.MantisProjectProperty_InvalidPattern(ISSUE_ID_STRING));

@@ -1,17 +1,19 @@
 package hudson.plugins.mantis.changeset;
 
-import hudson.model.AbstractBuild;
-import hudson.scm.CVSChangeLogSet;
-import hudson.scm.CVSRepositoryBrowser;
-import hudson.scm.EditType;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import hudson.scm.CVSChangeLogSet;
+import hudson.scm.CVSRepositoryBrowser;
+import hudson.scm.EditType;
+import hudson.scm.SCM;
+
 /**
  * ChangeSet of CVS
+ *
  * @author Seiji Sogabe
  * @since 0.7
  */
@@ -19,9 +21,8 @@ public class CVSChangeSet extends AbstractChangeSet<CVSChangeLogSet.CVSChangeLog
 
     private static final long serialVersionUID = 1L;
 
-    public CVSChangeSet(final int id, final AbstractBuild<?, ?> build,
-            final CVSChangeLogSet.CVSChangeLog entry) {
-        super(id, build, entry);
+    public CVSChangeSet(final int id, final SCM scm, final CVSChangeLogSet.CVSChangeLog entry) {
+        super(id, scm, entry);
     }
 
     @Override
@@ -34,8 +35,8 @@ public class CVSChangeSet extends AbstractChangeSet<CVSChangeLogSet.CVSChangeLog
         text.append(Messages.ChangeSet_ChangedPaths_Header());
         text.append(CRLF);
         for (final AffectedPath path : getAffectedPaths()) {
-            text.append(Messages.ChangeSet_ChangedPaths_CVS_Path(
-                    path.getMark(), path.getRevision(), path.getPath(), path.getDiffLink()));
+            text.append(Messages.ChangeSet_ChangedPaths_CVS_Path(path.getMark(), path.getRevision(), path.getPath(),
+                    path.getDiffLink()));
             text.append(CRLF);
         }
         text.append(CRLF);
@@ -62,8 +63,7 @@ public class CVSChangeSet extends AbstractChangeSet<CVSChangeLogSet.CVSChangeLog
 
         private final CVSRepositoryBrowser browser;
 
-        public AffectedPath(final CVSChangeLogSet.File file,
-                final CVSRepositoryBrowser browser) {
+        public AffectedPath(final CVSChangeLogSet.File file, final CVSRepositoryBrowser browser) {
             this.file = file;
             this.browser = browser;
         }
@@ -98,6 +98,6 @@ public class CVSChangeSet extends AbstractChangeSet<CVSChangeLogSet.CVSChangeLog
             return link.toExternalForm();
         }
     }
-    
+
     private static final Logger LOGGER = Logger.getLogger(CVSChangeLogSet.class.getName());
 }

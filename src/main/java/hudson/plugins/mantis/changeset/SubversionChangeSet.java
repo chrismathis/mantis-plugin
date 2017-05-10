@@ -1,10 +1,11 @@
 package hudson.plugins.mantis.changeset;
 
-import hudson.model.AbstractBuild;
-import hudson.scm.EditType;
-import hudson.scm.SubversionChangeLogSet;
 import java.util.ArrayList;
 import java.util.List;
+
+import hudson.scm.EditType;
+import hudson.scm.SCM;
+import hudson.scm.SubversionChangeLogSet;
 
 /**
  * ChangeSet of subversion.
@@ -16,9 +17,8 @@ public class SubversionChangeSet extends AbstractChangeSet<SubversionChangeLogSe
 
     private static final long serialVersionUID = 1L;
 
-    public SubversionChangeSet(final int id, final AbstractBuild<?, ?> build,
-            final SubversionChangeLogSet.LogEntry entry) {
-        super(id, build, entry);
+    public SubversionChangeSet(final int id, final SCM scm, final SubversionChangeLogSet.LogEntry entry) {
+        super(id, scm, entry);
     }
 
     @Override

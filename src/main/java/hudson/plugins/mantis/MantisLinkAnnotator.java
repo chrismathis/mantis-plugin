@@ -1,17 +1,17 @@
 package hudson.plugins.mantis;
 
-import hudson.Extension;
-import hudson.MarkupText;
-import hudson.Util;
-import hudson.MarkupText.SubText;
-import hudson.model.AbstractBuild;
-import hudson.plugins.mantis.model.MantisIssue;
-import hudson.scm.ChangeLogAnnotator;
-import hudson.scm.ChangeLogSet.Entry;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import hudson.Extension;
+import hudson.MarkupText;
+import hudson.MarkupText.SubText;
+import hudson.Util;
+import hudson.model.Run;
+import hudson.plugins.mantis.model.MantisIssue;
+import hudson.scm.ChangeLogAnnotator;
+import hudson.scm.ChangeLogSet.Entry;
 
 /**
  * Creates HTML link for Mantis issues.
@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 public final class MantisLinkAnnotator extends ChangeLogAnnotator {
 
     @Override
-    public void annotate(final AbstractBuild<?, ?> build, final Entry change, final MarkupText text) {
+    public void annotate(Run<?, ?> build, Entry change, MarkupText text) {
         final MantisProjectProperty mpp = MantisProjectProperty.get(build);
         if (mpp == null || mpp.getSite() == null) {
             return;
@@ -33,7 +33,7 @@ public final class MantisLinkAnnotator extends ChangeLogAnnotator {
 
         final MantisBuildAction action = build.getAction(MantisBuildAction.class);
         final String url = mpp.getSite().getUrl().toExternalForm();
-        
+
         final Pattern pattern = findRegexPattern(action, mpp);
 
         for (final SubText st : text.findTokens(pattern)) {
@@ -77,8 +77,8 @@ public final class MantisLinkAnnotator extends ChangeLogAnnotator {
         return pattern;
     }
 
-    private MantisIssue getIssue(final AbstractBuild<?, ?> build, final int id) {
-        final MantisSite site = MantisSite.get(build.getProject());
+    private MantisIssue getIssue(final Run<?, ?> build, final int id) {
+        final MantisSite site = MantisSite.get(build.getParent());
         MantisIssue issue;
         try {
             issue = site.getIssue(id);

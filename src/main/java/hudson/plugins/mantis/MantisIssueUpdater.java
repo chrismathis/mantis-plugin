@@ -1,37 +1,44 @@
 package hudson.plugins.mantis;
 
-import hudson.Extension;
-import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-
-import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.BuildStepMonitor;
-import hudson.tasks.Publisher;
-import hudson.tasks.Recorder;
 import java.io.IOException;
-
-import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import hudson.Extension;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.matrix.MatrixRun;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.Run;
+import hudson.model.TaskListener;
+import hudson.scm.SCM;
+import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.BuildStepMonitor;
+import hudson.tasks.Publisher;
+import hudson.tasks.Recorder;
+import jenkins.tasks.SimpleBuildStep;
+import net.sf.json.JSONObject;
+
 /**
  * Parses changelog for Mantis issue IDs and updates Mantis issues.
- * 
+ *
  * @author Seiji Sogabe
  */
-public final class MantisIssueUpdater extends Recorder {
+public final class MantisIssueUpdater extends Recorder implements SimpleBuildStep {
 
     private final boolean keepNotePrivate;
 
     private final boolean recordChangelog;
-    
+
+    private SCM scm;
+
     @DataBoundConstructor
-    public MantisIssueUpdater(final boolean keepNotePrivate, final boolean recordChangelog) {
+    public MantisIssueUpdater(final boolean keepNotePrivate, final boolean recordChangelog, SCM scm) {
         this.keepNotePrivate = keepNotePrivate;
         this.recordChangelog = recordChangelog;
+        this.scm = scm;
     }
 
     public boolean isKeepNotePrivate() {
@@ -48,10 +55,20 @@ public final class MantisIssueUpdater extends Recorder {
     }
 
     @Override
-    public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher,
-            final BuildListener listener) throws InterruptedException, IOException {
-        final Updater updater = new Updater(this);
-        return updater.perform(build, listener);
+    public void perform(final Run<?, ?> run, FilePath workspace, final Launcher launcher, final TaskListener listener)
+            throws InterruptedException, IOException {
+
+        if (run instanceof MatrixRun) {
+            return;
+        } else if (run instanceof AbstractBuild<?, ?>) {
+            AbstractBuild<?, ?> abstractBuild = (AbstractBuild<?, ?>) run;
+            final Updater updater = new Updater(abstractBuild.getParent().getScm(), isKeepNotePrivate(),
+                    isRecordChangelog());
+            updater.perform(run, listener);
+        } else {
+            final Updater updater = new Updater(scm, isKeepNotePrivate(), isRecordChangelog());
+            updater.perform(run, listener);
+        }
     }
 
     @Extension
