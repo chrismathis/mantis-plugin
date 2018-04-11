@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import hudson.scm.EditType;
-import hudson.scm.SCM;
+import hudson.scm.RepositoryBrowser;
 import hudson.scm.SubversionChangeLogSet;
+import hudson.scm.ChangeLogSet.Entry;
 
 /**
  * ChangeSet of subversion.
@@ -17,8 +18,9 @@ public class SubversionChangeSet extends AbstractChangeSet<SubversionChangeLogSe
 
     private static final long serialVersionUID = 1L;
 
-    public SubversionChangeSet(final int id, final SCM scm, final SubversionChangeLogSet.LogEntry entry) {
-        super(id, scm, entry);
+    public SubversionChangeSet(final int id, final RepositoryBrowser<Entry> repoBrowser,
+            final SubversionChangeLogSet.LogEntry entry) {
+        super(id, repoBrowser, entry);
     }
 
     @Override

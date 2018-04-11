@@ -3,7 +3,7 @@ package hudson.plugins.mantis.changeset;
 import java.util.ArrayList;
 import java.util.List;
 
-import hudson.scm.SCM;
+import hudson.scm.RepositoryBrowser;
 import hudson.scm.ChangeLogSet.Entry;
 
 /**
@@ -16,8 +16,8 @@ public class DefaultChangeSet extends AbstractChangeSet<Entry> {
 
     private static final long serialVersionUID = 1L;
 
-    public DefaultChangeSet(final int id, final SCM scm, final Entry entry) {
-        super(id, scm, entry);
+    public DefaultChangeSet(final int id, final RepositoryBrowser<Entry> repoBrowser, final Entry entry) {
+        super(id, repoBrowser, entry);
     }
 
     @Override

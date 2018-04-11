@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import hudson.scm.EditType;
-import hudson.scm.SCM;
+import hudson.scm.RepositoryBrowser;
+import hudson.scm.ChangeLogSet.Entry;
 
 /**
  * ChangeSet of Mecrutial.
@@ -16,8 +17,9 @@ public class MercurialChangeSet extends AbstractChangeSet<hudson.plugins.mercuri
 
     private static final long serialVersionUID = 1L;
 
-    public MercurialChangeSet(final int id, final SCM scm, final hudson.plugins.mercurial.MercurialChangeSet entry) {
-        super(id, scm, entry);
+    public MercurialChangeSet(final int id, final RepositoryBrowser<Entry> repoBrowser,
+            final hudson.plugins.mercurial.MercurialChangeSet entry) {
+        super(id, repoBrowser, entry);
     }
 
     @Override

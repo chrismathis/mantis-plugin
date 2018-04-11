@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 
 import hudson.model.User;
 import hudson.scm.RepositoryBrowser;
-import hudson.scm.SCM;
 import hudson.scm.ChangeLogSet.Entry;
 
 /**
@@ -19,12 +18,12 @@ import hudson.scm.ChangeLogSet.Entry;
 public abstract class AbstractChangeSet<T extends Entry> implements ChangeSet, Serializable {
 
     protected int id;
-    protected SCM scm;
+    protected final RepositoryBrowser<Entry> repoBrowser;
     protected T entry;
 
-    public AbstractChangeSet(final int id, final SCM scm, final T entry) {
+    public AbstractChangeSet(final int id, final RepositoryBrowser<Entry> repoBrowser, final T entry) {
         this.id = id;
-        this.scm = scm;
+        this.repoBrowser = repoBrowser;
         this.entry = entry;
     }
 
@@ -36,24 +35,16 @@ public abstract class AbstractChangeSet<T extends Entry> implements ChangeSet, S
     @Override
     public abstract String createChangeLog();
 
-    protected RepositoryBrowser getRepositoryBrowser() {
-        if (scm == null) {
-            return null;
-        }
-        return scm.getBrowser();
-    }
-
     protected String getChangeSetLink() {
-        @SuppressWarnings("unchecked")
-        final RepositoryBrowser<T> browser = getRepositoryBrowser();
-        if (browser == null) {
+
+        if (repoBrowser == null) {
             return UNKNOWN_CHANGESETLINK;
         }
 
         String link = UNKNOWN_CHANGESETLINK;
         try {
             @SuppressWarnings("unchecked")
-            final URL url = browser.getChangeSetLink(entry);
+            final URL url = repoBrowser.getChangeSetLink(entry);
             if (url != null) {
                 link = url.toString();
             }

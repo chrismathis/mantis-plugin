@@ -9,7 +9,8 @@ import java.util.logging.Logger;
 import hudson.scm.CVSChangeLogSet;
 import hudson.scm.CVSRepositoryBrowser;
 import hudson.scm.EditType;
-import hudson.scm.SCM;
+import hudson.scm.RepositoryBrowser;
+import hudson.scm.ChangeLogSet.Entry;
 
 /**
  * ChangeSet of CVS
@@ -20,9 +21,12 @@ import hudson.scm.SCM;
 public class CVSChangeSet extends AbstractChangeSet<CVSChangeLogSet.CVSChangeLog> {
 
     private static final long serialVersionUID = 1L;
+    final RepositoryBrowser<?> repoBrowser;
 
-    public CVSChangeSet(final int id, final SCM scm, final CVSChangeLogSet.CVSChangeLog entry) {
-        super(id, scm, entry);
+    public CVSChangeSet(final int id, final RepositoryBrowser<Entry> repoBrowser,
+            final CVSChangeLogSet.CVSChangeLog entry) {
+        super(id, repoBrowser, entry);
+        this.repoBrowser = repoBrowser;
     }
 
     @Override
@@ -50,7 +54,7 @@ public class CVSChangeSet extends AbstractChangeSet<CVSChangeLogSet.CVSChangeLog
 
     private List<AffectedPath> getAffectedPaths() {
         final List<AffectedPath> paths = new ArrayList<AffectedPath>();
-        final CVSRepositoryBrowser browser = (CVSRepositoryBrowser) getRepositoryBrowser();
+        final CVSRepositoryBrowser browser = (CVSRepositoryBrowser) repoBrowser;
         for (final CVSChangeLogSet.File file : entry.getFiles()) {
             paths.add(new AffectedPath(file, browser));
         }

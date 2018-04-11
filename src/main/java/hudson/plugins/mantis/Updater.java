@@ -16,7 +16,6 @@ import hudson.plugins.mantis.changeset.ChangeSet;
 import hudson.plugins.mantis.changeset.ChangeSetFactory;
 import hudson.plugins.mantis.model.MantisIssue;
 import hudson.scm.ChangeLogSet;
-import hudson.scm.SCM;
 import hudson.scm.ChangeLogSet.Entry;
 
 /**
@@ -28,12 +27,12 @@ final class Updater {
 
     private static final String CRLF = System.getProperty("line.separator");
 
-    private SCM scm;
     private boolean keepNotePrivate;
     private boolean recordChangeNote;
+    private List<ChangeLogSet<? extends Entry>> changeSets;
 
-    Updater(final SCM scm, boolean keepNotePrivate, boolean recordChangeNote) {
-        this.scm = scm;
+    Updater(List<ChangeLogSet<? extends Entry>> changeSets, boolean keepNotePrivate, boolean recordChangeNote) {
+        this.changeSets = changeSets;
         this.keepNotePrivate = keepNotePrivate;
         this.recordChangeNote = recordChangeNote;
     }
@@ -124,18 +123,20 @@ final class Updater {
             }
         }
 
-        chnageSets.addAll(findChangeSetsFromSCM(build));
-
+        if (changeSets != null) {
+            chnageSets.addAll(findChangeSetsFromChangeLogSets(changeSets, build));
+        }
         return chnageSets;
     }
 
-    private List<ChangeSet> findChangeSetsFromSCM(final Run<?, ?> build) {
-        final List<ChangeSet> changeSets = new ArrayList<ChangeSet>();
+    private List<ChangeSet> findChangeSetsFromChangeLogSets(List<ChangeLogSet<? extends Entry>> changeSets,
+            final Run<?, ?> build) {
+        final List<ChangeSet> mantisChangeSets = new ArrayList<ChangeSet>();
 
         MantisProjectProperty mpp = MantisProjectProperty.get(build);
         final Pattern pattern = mpp.getRegexpPattern();
 
-        for (ChangeLogSet<? extends Entry> set : RunScmChangeExtractor.getChanges(build)) {
+        for (ChangeLogSet<? extends Entry> set : changeSets) {
             for (Entry change : set) {
                 final Matcher matcher = pattern.matcher(change.getMsg());
                 while (matcher.find()) {
@@ -147,12 +148,12 @@ final class Updater {
                         LOGGER.log(Level.WARNING, Messages.Updater_IllegalMantisId(matcher.group(1)));
                         continue;
                     }
-                    changeSets.add(ChangeSetFactory.newInstance(id, scm, change));
+                    mantisChangeSets.add(ChangeSetFactory.newInstance(id, change.getParent().getBrowser(), change));
                 }
             }
         }
 
-        return changeSets;
+        return mantisChangeSets;
     }
 
     private static final Logger LOGGER = Logger.getLogger(Updater.class.getName());

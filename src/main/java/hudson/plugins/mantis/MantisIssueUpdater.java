@@ -1,6 +1,7 @@
 package hudson.plugins.mantis;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -9,11 +10,11 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.matrix.MatrixRun;
-import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.scm.SCM;
+import hudson.scm.ChangeLogSet;
+import hudson.scm.ChangeLogSet.Entry;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
@@ -32,13 +33,10 @@ public final class MantisIssueUpdater extends Recorder implements SimpleBuildSte
 
     private final boolean recordChangelog;
 
-    private SCM scm;
-
     @DataBoundConstructor
-    public MantisIssueUpdater(final boolean keepNotePrivate, final boolean recordChangelog, SCM scm) {
+    public MantisIssueUpdater(final boolean keepNotePrivate, final boolean recordChangelog) {
         this.keepNotePrivate = keepNotePrivate;
         this.recordChangelog = recordChangelog;
-        this.scm = scm;
     }
 
     public boolean isKeepNotePrivate() {
@@ -60,14 +58,16 @@ public final class MantisIssueUpdater extends Recorder implements SimpleBuildSte
 
         if (run instanceof MatrixRun) {
             return;
-        } else if (run instanceof AbstractBuild<?, ?>) {
-            AbstractBuild<?, ?> abstractBuild = (AbstractBuild<?, ?>) run;
-            final Updater updater = new Updater(abstractBuild.getParent().getScm(), isKeepNotePrivate(),
-                    isRecordChangelog());
-            updater.perform(run, listener);
         } else {
-            final Updater updater = new Updater(scm, isKeepNotePrivate(), isRecordChangelog());
-            updater.perform(run, listener);
+            try {
+                @SuppressWarnings("unchecked")
+                List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = (List<ChangeLogSet<? extends Entry>>) run
+                        .getClass().getMethod("getChangeSets").invoke(run);
+                final Updater updater = new Updater(changeSets, isKeepNotePrivate(), isRecordChangelog());
+                updater.perform(run, listener);
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
         }
     }
 
